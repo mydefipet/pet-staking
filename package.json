@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "openzeppelin-solidity": "4.3.1"
+  },
+  "name": "pet-staking",
+  "version": "1.0.0",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mydefipet/pet-staking.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mydefipet/pet-staking/issues"
+  },
+  "homepage": "https://github.com/mydefipet/pet-staking#readme",
+  "description": ""
+}
