@@ -34,6 +34,12 @@ contract StakePetEarnDPET is
     struct UserInfo {
         uint256 stakingPower;
         uint256 rewardDebt;
+        uint256 totalStakedPet;
+    }
+
+    struct PetInfo {
+        bool staked;
+        uint256 stakeAtBlock;
     }
 
     uint256 accDPETPerShare; // Accumulated DPET per share
@@ -43,12 +49,15 @@ contract StakePetEarnDPET is
     uint256 public totalStakingPower;
     IERC721 public immutable erc721;
     address public constant dpetToken = 0xfb62AE373acA027177D1c18Ee0862817f9080d08; // DPET Address on BSC
+    uint256 public maxTotalStakedPet = 10;
+    uint256 public minStakeBlocks = 864000; // = (30*86400)/3 assuming blocktime 3s
     IPetMaster public immutable petMaster;
     IGetStakingPower public immutable getStakingPowerProxy;
     bool public immutable isMintPowerTokenEveryTimes;
     mapping(uint256 => bool) private _mintPowers;
     mapping(address => UserInfo) private _userInfoMap;
     mapping(address => EnumerableSet.UintSet) private _stakingTokens;
+    mapping(uint256 => PetInfo) private _petInfoMap;
 
     constructor(
         string memory _name,
@@ -118,7 +127,9 @@ contract StakePetEarnDPET is
     }
 
     function stake(uint256 _tokenId) public override nonReentrant whenNotPaused {
+        require(!_petInfoMap[_tokenId].staked, "PET ALREADY STAKED");
         UserInfo storage userInfo = _userInfoMap[_msgSender()];
+        require(userInfo.totalStakedPet <= maxTotalStakedPet, "EXECED CAP LIMIT");
         _harvest(userInfo);
         uint256 stakingPower = getStakingPower(_tokenId);
         if (isMintPowerTokenEveryTimes || !_mintPowers[_tokenId]) {
@@ -128,11 +139,18 @@ contract StakePetEarnDPET is
 
         erc721.safeTransferFrom(_msgSender(), address(this), _tokenId);
         userInfo.stakingPower = userInfo.stakingPower.add(stakingPower);
+        userInfo.totalStakedPet += 1;
         _stakingTokens[_msgSender()].add(_tokenId);
         _approveToMasterIfNecessary(stakingPower);
         petMaster.stake(address(this), stakingPower);
         totalStakingPower = totalStakingPower.add(stakingPower);
         userInfo.rewardDebt = userInfo.stakingPower.mul(accDPETPerShare).div(accDPETPerShareMultiple);
+
+        // update pet _tokenId state
+        PetInfo storage petInfo = _petInfoMap[_tokenId];
+        petInfo.staked = true;
+        petInfo.stakeAtBlock = block.number;
+
         emit Stake(_msgSender(), _tokenId, stakingPower);
     }
 
@@ -144,10 +162,13 @@ contract StakePetEarnDPET is
 
     function unstake(uint256 _tokenId) public override nonReentrant {
         require(_stakingTokens[_msgSender()].contains(_tokenId), 'UNSTAKE FORBIDDEN');
+        require(block.number > _petInfoMap[_tokenId].stakeAtBlock.add(minStakeBlocks), 'NOT ENOUGH STAKE TIME');
+
         UserInfo storage userInfo = _userInfoMap[_msgSender()];
         _harvest(userInfo);
         uint256 stakingPower = getStakingPower(_tokenId);
         userInfo.stakingPower = userInfo.stakingPower.sub(stakingPower);
+        userInfo.totalStakedPet -= 1;
         _stakingTokens[_msgSender()].remove(_tokenId);
         erc721.safeTransferFrom(address(this), _msgSender(), _tokenId);
         petMaster.unstake(address(this), stakingPower);
@@ -212,6 +233,18 @@ contract StakePetEarnDPET is
         } else {
             IERC20(dpetToken).transfer(_to, _amount);
         }
+    }
+
+    function getPetInfo(uint256 _tokenId) 
+        public 
+        view 
+        return (
+            bool,
+            uint256
+        )
+    {
+        PetInfo memory petInfo = _petInfoMap[_tokenId];
+        return (petInfo.staked, petInfo.stakeAtBlock)
     }
 
     function getUserInfo(address user)
