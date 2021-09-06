@@ -253,6 +253,7 @@ contract StakePetEarnDPET is
         returns (
             uint256,
             uint256,
+            uint256,
             uint256[] memory
         )
     {
@@ -261,6 +262,6 @@ contract StakePetEarnDPET is
         for (uint256 i = 0; i < tokenIds.length; ++i) {
             tokenIds[i] = _stakingTokens[user].at(i);
         }
-        return (userInfo.stakingPower, userInfo.rewardDebt, tokenIds);
+        return (userInfo.stakingPower, user.totalStakedPet, userInfo.rewardDebt, tokenIds);
     }
 }
