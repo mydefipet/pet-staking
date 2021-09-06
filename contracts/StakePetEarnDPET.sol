@@ -39,7 +39,7 @@ contract StakePetEarnDPET is
 
     struct PetInfo {
         bool staked;
-        uint256 stakeAtBlock;
+        uint256 stakedAtBlock;
     }
 
     uint256 accDPETPerShare; // Accumulated DPET per share
@@ -149,7 +149,7 @@ contract StakePetEarnDPET is
         // update pet _tokenId state
         PetInfo storage petInfo = _petInfoMap[_tokenId];
         petInfo.staked = true;
-        petInfo.stakeAtBlock = block.number;
+        petInfo.stakedAtBlock = block.number;
 
         emit Stake(_msgSender(), _tokenId, stakingPower);
     }
@@ -162,7 +162,7 @@ contract StakePetEarnDPET is
 
     function unstake(uint256 _tokenId) public override nonReentrant {
         require(_stakingTokens[_msgSender()].contains(_tokenId), 'UNSTAKE FORBIDDEN');
-        require(block.number > _petInfoMap[_tokenId].stakeAtBlock.add(minStakeBlocks), 'NOT ENOUGH STAKE TIME');
+        require(block.number > _petInfoMap[_tokenId].stakedAtBlock.add(minStakeBlocks), 'NOT ENOUGH STAKE TIME');
 
         UserInfo storage userInfo = _userInfoMap[_msgSender()];
         _harvest(userInfo);
@@ -244,7 +244,7 @@ contract StakePetEarnDPET is
         )
     {
         PetInfo memory petInfo = _petInfoMap[_tokenId];
-        return (petInfo.staked, petInfo.stakeAtBlock)
+        return (petInfo.staked, petInfo.stakedAtBlock)
     }
 
     function getUserInfo(address user)
