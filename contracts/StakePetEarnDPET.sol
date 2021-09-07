@@ -238,13 +238,13 @@ contract StakePetEarnDPET is
     function getPetInfo(uint256 _tokenId) 
         public 
         view 
-        return (
+        returns (
             bool,
             uint256
         )
     {
         PetInfo memory petInfo = _petInfoMap[_tokenId];
-        return (petInfo.staked, petInfo.stakedAtBlock)
+        return (petInfo.staked, petInfo.stakedAtBlock);
     }
 
     function getUserInfo(address user)
@@ -262,6 +262,6 @@ contract StakePetEarnDPET is
         for (uint256 i = 0; i < tokenIds.length; ++i) {
             tokenIds[i] = _stakingTokens[user].at(i);
         }
-        return (userInfo.stakingPower, user.totalStakedPet, userInfo.rewardDebt, tokenIds);
+        return (userInfo.stakingPower, userInfo.totalStakedPet, userInfo.rewardDebt, tokenIds);
     }
 }
